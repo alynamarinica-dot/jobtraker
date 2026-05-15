@@ -10,6 +10,7 @@ A modern, AI-powered job application tracking tool to help you land your dream j
 - **📊 Statistics Dashboard** - Visual overview of your application statuses
 - **🎨 Beautiful UI** - Responsive design with bright yellow theme
 - **⚡ Fast & Modern** - Built with Next.js 16, React 19, TypeScript
+- **📄 Resume Analysis** - Upload your resume for AI-powered scoring and feedback (New!)
 
 ## 🎯 Quick Start
 
@@ -44,18 +45,10 @@ Visit **http://localhost:3000** in your browser.
 ```
 jobtracker/
 ├── src/app/
-│   ├── page.tsx              # Job tracker main page
+│   ├── page.tsx              # Main page with Tabs (Applications/Resumes)
+│   ├── components/
+│   │   └── ResumeManager.tsx # Resume upload & AI analysis logic
 │   ├── insights/page.tsx     # AI insights & coaching
-│   ├── api/
-│   │   ├── insights/route.ts # Interview insights API
-│   │   └── coach/route.ts    # Interview coaching API
-│   ├── globals.css           # Tailwind styles
-│   └── layout.tsx            # Root layout
-├── public/                   # Static files
-├── .env.local               # API keys (never commit!)
-├── SETUP.md                 # Setup instructions
-├── DEPLOY.md                # Deployment guide
-└── package.json             # Dependencies
 ```
 
 ## 🚀 Deployment
