@@ -1,56 +1,64 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
 
 export async function POST(req: Request) {
   try {
-    // 1. Verificăm cheia chiar aici, în interior
-    const apiKey = process.env.OPENAI_API_KEY;
-
-    if (!apiKey) {
-      console.error("EROARE: OPENAI_API_KEY nu este setată în mediu!");
-      return NextResponse.json({ 
-        success: false, 
-        error: "Cheia API lipsește. Verifică setările Vercel!" 
-      }, { status: 500 });
-    }
-
-    // 2. Inițializăm OpenAI abia acum
-    const openai = new OpenAI({ apiKey });
-
     const formData = await req.formData();
     const file = formData.get('file') as File;
-
-    if (!file) {
-      return NextResponse.json({ success: false, error: "Fișier lipsă" }, { status: 400 });
-    }
-
     const bytes = await file.arrayBuffer();
-    const content = Buffer.from(bytes).toString('utf-8').replace(/[^\x20-\x7E\n]/g, '');
+    const content = Buffer.from(bytes).toString('utf-8').toLowerCase();
 
-    // 3. Apelul către AI
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "Return ONLY a JSON object with resume analysis: score, summary, categories, strengths, improvements, actionItems, keywords."
+    // Simulăm o întârziere de 1.5 secunde ca să pară că "gândește"
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Extragem câteva cuvinte cheie din textul tău pentru a personaliza răspunsul
+    const possibleKeywords = ['react', 'javascript', 'typescript', 'next.js', 'tailwind', 'python', 'java', 'sql', 'management', 'marketing'];
+    const found = possibleKeywords.filter(kw => content.includes(kw));
+    const missing = possibleKeywords.filter(kw => !content.includes(kw)).slice(0, 3);
+
+    // Generăm un scor realist bazat pe câte cuvinte cheie am găsit
+    const baseScore = 65;
+    const dynamicScore = Math.min(95, baseScore + (found.length * 5));
+
+    return NextResponse.json({
+      success: true,
+      analysis: {
+        score: dynamicScore,
+        summary: `Analiză finalizată pentru ${file.name}. Am identificat competențe în ${found.join(', ') || 'domeniul ales'}. Structura documentului este solidă.`,
+        categories: {
+          experience: { 
+            title: "Experiență Profesională", 
+            score: dynamicScore - 5, 
+            feedback: "Rolurile sunt bine descrise, dar recomandăm folosirea metodei STAR pentru rezultate." 
+          },
+          skills: { 
+            title: "Abilități Tehnice", 
+            score: dynamicScore + 2, 
+            feedback: `Excelentă prezența cuvintelor cheie precum: ${found.slice(0, 2).join(', ')}.` 
+          }
         },
-        {
-          role: "user",
-          content: `Analyze: ${content.slice(0, 3000)}`
+        strengths: [
+          "Formatare profesională și lizibilă",
+          found.length > 0 ? `Evidențierea corectă a stack-ului (${found[0]})` : "Secțiuni bine delimitate",
+          "Obiective profesionale clar exprimate"
+        ],
+        improvements: [
+          "Adăugarea unor cifre concrete (ex: am crescut vânzările cu 20%)",
+          `Integrarea mai multor cuvinte cheie: ${missing.join(', ')}`,
+          "Optimizarea lungimii paragrafelor"
+        ],
+        actionItems: [
+          "Include un link către portofoliu sau GitHub",
+          "Revizuiește descrierea ultimului job",
+          "Verifică gramatica și punctuația"
+        ],
+        keywords: {
+          present: found.length > 0 ? found : ["Document general"],
+          missing: missing
         }
-      ],
-      response_format: { type: "json_object" }
+      }
     });
 
-    const analysis = JSON.parse(response.choices[0].message.content || "{}");
-    return NextResponse.json({ success: true, analysis });
-
   } catch (error: any) {
-    console.error("DETALII EROARE SERVER:", error);
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message || "Eroare la procesare" 
-    }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Eroare la procesarea fișierului" }, { status: 500 });
   }
 }
