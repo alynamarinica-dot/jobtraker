@@ -1,44 +1,56 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req: Request) {
   try {
+    // 1. Verificăm cheia chiar aici, în interior
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      console.error("EROARE: OPENAI_API_KEY nu este setată în mediu!");
+      return NextResponse.json({ 
+        success: false, 
+        error: "Cheia API lipsește. Verifică setările Vercel!" 
+      }, { status: 500 });
+    }
+
+    // 2. Inițializăm OpenAI abia acum
+    const openai = new OpenAI({ apiKey });
+
     const formData = await req.formData();
     const file = formData.get('file') as File;
 
     if (!file) {
-      return NextResponse.json({ success: false, error: "No file uploaded" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Fișier lipsă" }, { status: 400 });
     }
 
-    // Extragem textul simplu din fișier (pentru PDF-uri complexe e nevoie de biblioteci extra, 
-    // dar pentru început citim textul de bază)
     const bytes = await file.arrayBuffer();
-    const content = Buffer.from(bytes).toString('utf-8');
+    const content = Buffer.from(bytes).toString('utf-8').replace(/[^\x20-\x7E\n]/g, '');
 
+    // 3. Apelul către AI
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo-0125", // sau "gpt-4o" dacă ai credit
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: "You are an expert HR recruiter. Analyze the resume and return ONLY a JSON object with: score (0-100), summary, categories (experience, skills), strengths (array), improvements (array), actionItems (array), keywords (present, missing)."
+          content: "Return ONLY a JSON object with resume analysis: score, summary, categories, strengths, improvements, actionItems, keywords."
         },
         {
           role: "user",
-          content: `Analyze this resume content: ${content}`
+          content: `Analyze: ${content.slice(0, 3000)}`
         }
       ],
       response_format: { type: "json_object" }
     });
 
     const analysis = JSON.parse(response.choices[0].message.content || "{}");
-
     return NextResponse.json({ success: true, analysis });
+
   } catch (error: any) {
-    console.error("OpenAI Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error("DETALII EROARE SERVER:", error);
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message || "Eroare la procesare" 
+    }, { status: 500 });
   }
 }
