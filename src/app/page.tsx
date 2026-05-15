@@ -3,6 +3,7 @@
 // Job Application Tracker
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import ResumeManager from './components/ResumeManager';
 
 interface Job {
   id: string;
@@ -18,6 +19,7 @@ export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'jobs' | 'resumes'>('jobs');
   const [formData, setFormData] = useState({
     company: '',
     position: '',
@@ -144,6 +146,33 @@ export default function Home() {
         {/* Main App Section */}
         <div className="px-6 pb-16" id="jobs-list">
 
+        {/* Tabs Navigation */}
+        <div className="mb-8 flex gap-4 border-b-2 border-gray-200">
+          <button
+            onClick={() => setActiveTab('jobs')}
+            className={`px-6 py-3 font-bold text-lg transition border-b-4 ${
+              activeTab === 'jobs'
+                ? 'border-yellow-400 text-gray-900'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            📋 Applications
+          </button>
+          <button
+            onClick={() => setActiveTab('resumes')}
+            className={`px-6 py-3 font-bold text-lg transition border-b-4 ${
+              activeTab === 'resumes'
+                ? 'border-yellow-400 text-gray-900'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            📄 Resumes
+          </button>
+        </div>
+
+        {/* Jobs Tab */}
+        {activeTab === 'jobs' && (
+          <>
         {/* Add Job Button */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-6">Your Applications</h2>
@@ -281,6 +310,13 @@ export default function Home() {
             ))
           )}
         </div>
+        </>
+        )}
+
+        {/* Resumes Tab */}
+        {activeTab === 'resumes' && (
+          <ResumeManager />
+        )}
       </div>
     </main>
   </div>
